@@ -27,7 +27,6 @@ def weighting_func(x):
 
 opt = parse_opts_online()
 
-
 def load_models(opt):
     opt.resume_path = opt.resume_path_det
     opt.pretrain_path = opt.pretrain_path_det
@@ -64,13 +63,30 @@ def load_models(opt):
 
     detector, parameters = generate_model(opt)
 
+
     if opt.resume_path:
         opt.resume_path = os.path.join(opt.root_path, opt.resume_path)
         print('loading checkpoint {}'.format(opt.resume_path))
         checkpoint = torch.load(opt.resume_path)
+        # print('checkpoint:', checkpoint)
         #assert opt.arch == checkpoint['arch']
 
-        detector.load_state_dict(checkpoint['state_dict'])
+        # detector.load_state_dict(checkpoint['state_dict'])
+        detector.load_state_dict({k.replace('module.',''):v for k,v in checkpoint['state_dict'].items()})
+
+        #修改版本一
+        # from collections import OrderedDict
+        # new_state_dict = OrderedDict()
+        # for k, v in checkpoint.items():
+        #     name = k[7:]  # remove `module.`
+        #     new_state_dict[name] = v
+        #
+        # # load params
+        # detector.load_state_dict(new_state_dict)
+
+        #修改版本二
+        # detector.load_state_dict({k.replace('module.', ''): v for k, v in checkpoint.items()})
+        print('load detector success!!!!!!')
 
     print('Model 1 \n', detector)
     pytorch_total_params = sum(p.numel() for p in detector.parameters() if
@@ -115,7 +131,8 @@ def load_models(opt):
         checkpoint = torch.load(opt.resume_path)
 #        assert opt.arch == checkpoint['arch']
 
-        classifier.load_state_dict(checkpoint['state_dict'])
+        classifier.load_state_dict({k.replace('module.',''):v for k,v in checkpoint['state_dict'].items()})
+        print('load classifier success!!!!')
 
     print('Model 2 \n', classifier)
     pytorch_total_params = sum(p.numel() for p in classifier.parameters() if
@@ -150,10 +167,15 @@ if opt.dataset == 'egogesture':
         for x in glob.glob(os.path.join(opt.video_path, subject, '*/*/rgb*')):
             test_paths.append(x)
 elif opt.dataset == 'nvgesture':
-    df = pd.read_csv(os.path.join(opt.video_path, 'nvgesture_test_correct_cvpr2016_v2.lst'), delimiter=' ', header=None)
+    csv_path = os.path.join(opt.video_path, 'nvgesture_test_correct_cvpr2016_v2.lst')
+    # csv_path = 'D:\\study\\毕设\\数据集\\nvGesture\\nvgesture_arch-20200527T022937Z-001\\nvgesture_arch\\nvgesture_test_correct_cvpr2016_v2.lst'
+    print('csv path: ', csv_path)
+    # 此处路径有中文，如果不加engine会报错
+    df = pd.read_csv(csv_path, delimiter=' ', header=None, engine='python')
     test_paths = []
     for x in df[0].values:
-        test_paths.append(os.path.join(opt.video_path, x.replace('path:', ''), 'sk_color_all'))
+        print('x: ', x)
+        test_paths.append(os.path.join(opt.video_path, x.replace('path:./', ''), 'sk_depth_all'))
 
 print('Start Evaluation')
 detector.eval()
@@ -162,10 +184,13 @@ classifier.eval()
 levenshtein_accuracies = AverageMeter()
 videoidx = 0
 for path in test_paths[:]:
+    print('path: ', path)
     if opt.dataset == 'egogesture':
         opt.whole_path = os.path.join(*path.rsplit(os.sep, 4)[1:])
+        print('opt.whole_path: ', opt.whole_path)
     elif opt.dataset == 'nvgesture':
         opt.whole_path = os.path.join(*path.rsplit(os.sep, 5)[1:])
+        print('opt.whole_path: ', opt.whole_path)
 
     videoidx += 1
     active_index = 0
@@ -363,7 +388,7 @@ print('Average Levenshtein Accuracy= {}'.format(levenshtein_accuracies.avg))
 print('-----Evaluation is finished------')
 with open("./results/online-results.log", "a") as myfile:
     myfile.write("{}, {}, {}, {}, {}, {}".format(datetime.datetime.now(),
-                                    opt.resume_path_clf, 
+                                    opt.resume_path_clf,
                                     opt.model_clf,
                                     opt.width_mult_clf,
                                     opt.modality_clf,

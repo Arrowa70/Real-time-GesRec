@@ -1,12 +1,12 @@
 #!/bin/bash
 python3 online_test.py \
-	--root_path /Users/A.Gunduz/Desktop/git/Real-time-GesRec/\
+	--root_path /home/tangyaruo/hand/baseline/Real-time-GesRec\
 	--video_path /data2/EgoGesture/images \
 	--annotation_path annotation_EgoGesture/egogestureall.json \
-	--resume_path_det report/egogesture_resnetl_10_Depth_8_9939.pth \
-	--resume_path_clf report/egogesture_resnext_101_Depth_32_9403.pth  \
+	--resume_path_det /home/tangyaruo/hand/baseline/pretrained_models/v1/shared_models_v1/models/nv_resnetl_10_Depth_8.pth \
+	--resume_path_clf /home/tangyaruo/hand/baseline/pretrained_models/v1/shared_models_v1/models/nv_resnext_101_Depth_32.pth  \
 	--result_path results \
-	--dataset egogesture    \
+	--dataset nvgesture    \
 	--sample_duration_det 8 \
 	--sample_duration_clf 32 \
 	--model_det resnetl \

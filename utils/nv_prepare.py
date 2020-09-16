@@ -5,7 +5,9 @@ import glob
 import sys
 from subprocess import call
 
-dataset_path = "/data2/nvGesture"
+# dataset_path = "/data2/nvGesture"
+# 第一个压缩文件解压后的路径
+dataset_path = "D:/study/毕设/数据集/nvGesture/nvGesture_v1"
 def load_split_nvgesture(file_with_split = './nvgesture_train_correct.lst',list_split = list()):
     file_with_split = os.path.join(dataset_path,file_with_split)
     params_dictionary = dict()
@@ -84,6 +86,7 @@ def create_list(example_config, sensor,  class_types = 'all'):
             new_lines.append(folder_path + ' ' + '1' + ' ' + str(start)+ ' ' + str(n_images))
 
 def extract_frames(sensors=["color", "depth"]):
+    print('start extract_frames...')
     """Extract frames of .avi files.
     
     Parameters
@@ -94,22 +97,27 @@ def extract_frames(sensors=["color", "depth"]):
         files = glob.glob(os.path.join(dataset_path, 
                                        "Video_data",
                                        "*", "*", 
-                                       "sk_" + vt + ".avi")) # this line should be updated according to the full path 
+                                       "sk_" + vt + ".avi")) # this line should be updated according to the full path
+
+        # print('files', files)
         for file in files:
             print("Extracting frames for ", file)
             directory = file.split(".")[0] + "_all"
+            print('directory', directory)
             if not os.path.exists(directory):
                 os.makedirs(directory)
-            call(["ffmpeg", "-i",  file, os.path.join(directory, "%05d.jpg"), "-hide_banner"]) 
+            target_path = os.path.join(directory, "%05d.jpg")
+            print('target_path: ', target_path)
+            call(["ffmpeg", "-i",  file, target_path, "-hide_banner"])
        
     
 if __name__ == "__main__":
     sensors = ["color", "depth"]
-    subset = sys.argv[1]
-    file_name = sys.argv[2]
-    class_types = sys.argv[3]
+    subset = sys.argv[1]             # training/validation
+    file_name = sys.argv[2]          # trainlistall.txt/trainlistall_but_None.txt/trainlistbinary.txt    vallistall.txt/vallistall_but_None.txt/vallistbinary.txt
+    class_types = sys.argv[3]        # all/all_but_None/binary
 
-    sensors = ["color"]
+    # sensors = ["color"]
     file_lists = dict()
     if subset == 'training':
         file_list = "./nvgesture_train_correct_cvpr2016_v2.lst"
@@ -124,11 +132,11 @@ if __name__ == "__main__":
     new_lines = [] 
     print("Processing Traing List")
     for sample_name in subset_list:
-        create_list(example_config = sample_name, sensor = sensors[0], class_types = class_types)
+        create_list(example_config = sample_name, sensor = sensors[1], class_types = class_types)
 
 
     print("Writing to the file ...")
-    file_path = os.path.join('annotation_nvGesture',file_name)
+    file_path = os.path.join('annotation_nvGesture_test',file_name)
     with open(file_path, 'w') as myfile:
         for new_line in new_lines:
             myfile.write(new_line)
